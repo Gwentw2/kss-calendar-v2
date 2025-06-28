@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KSS 行事曆</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      padding: 20px;
+      margin: auto;
+      max-width: 900px;
+      background-color: #f4f6f8;
+    }
+    #calendar {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #loginBtn {
+      margin: 10px 0 20px;
+      padding: 8px 16px;
+      font-size: 1em;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #loginBtn:hover {
+      background-color: #0056b3;
+    }
+    #todaySchedule {
+      background: #fff;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    @media (max-width: 600px) {
+      #calendar, #todaySchedule {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>KSS 行事曆</h1>
+<button id="loginBtn">🔐 管理者登入</button>
+
+<div id="todaySchedule">
+  <h2>📅 今日行程</h2>
+  <ul id="todayList">
+    <li>載入中...</li>
+  </ul>
+</div>
+
+<div id="calendar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales-all.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    let isAdmin = false;
+    const calendarEl = document.getElementById('calendar');
+    const loginBtn = document.getElementById('loginBtn');
+    const todayList = document.getElementById('todayList');
+    let events = [];
+
+    const saved = localStorage.getItem('myCalendarEvents');
+    if (saved) {
+      try {
+        events = JSON.parse(saved);
+      } catch (e) {
+        events = [];
+      }
+    }
+
+    function saveEvents() {
+      localStorage.setItem('myCalendarEvents', JSON.stringify(events));
+    }
+
+    function renderTodaySchedule() {
+      const today = new Date().toISOString().split("T")[0];
+      const todays = events.filter(e => e.date === today);
+      todayList.innerHTML = '';
+
+      if (todays.length === 0) {
+        todayList.innerHTML = '<li>今天沒有行程</li>';
+      } else {
+        const sorted = todays.sort((a, b) => a.start.localeCompare(b.start));
+        for (const ev of sorted) {
+          const li = document.createElement('li');
+          li.textContent = `${ev.start}-${ev.end} ${ev.title}`;
+          todayList.appendChild(li);
+        }
+      }
+    }
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'zh-tw',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: ''
+      },
+      events: events.map(e => ({
+        title: `${e.start}-${e.end} ${e.title}`,
+        start: e.date,
+        allDay: true
+      })),
+      dateClick: function(info) {
+        if (!isAdmin) {
+          const dayEvents = events.filter(e => e.date === info.dateStr);
+          if (dayEvents.length === 0) {
+            alert(info.dateStr + ' 沒有安排任何行程。');
+          } else {
+            const details = dayEvents.map(e => `${e.start} - ${e.end} ${e.title}`).join('\n');
+            alert(info.dateStr + ' 行程如下：\n' + details);
+          }
+          return;
+        }
+
+        const title = prompt("輸入活動名稱：");
+        if (!title) return;
+        const start = prompt("開始時間 (例如 09:00)：");
+        const end = prompt("結束時間 (例如 10:00)：");
+        if (!start || !end) return;
+
+        const newEvent = { title, start, end, date: info.dateStr };
+        events.push(newEvent);
+        saveEvents();
+
+        calendar.addEvent({
+          title: `${start}-${end} ${title}`,
+          start: info.dateStr,
+          allDay: true
+        });
+
+        renderTodaySchedule();
+      },
+      eventClick: function(info) {
+        if (!isAdmin) return;
+        const confirmDelete = confirm("是否要刪除此行程？\n" + info.event.title);
+        if (confirmDelete) {
+          const index = events.findIndex(e =>
+            `${e.start}-${e.end} ${e.title}` === info.event.title && e.date === info.event.startStr
+          );
+          if (index > -1) events.splice(index, 1);
+          info.event.remove();
+          saveEvents();
+          renderTodaySchedule();
+        }
+      },
+    });
+
+    calendar.render();
+    renderTodaySchedule();
+
+    loginBtn.addEventListener('click', () => {
+      const password = prompt("請輸入管理者密碼：");
+      if (password === "wor2025") {
+        isAdmin = true;
+        alert("登入成功，您現在可以新增與刪除行程。");
+      } else {
+        alert("密碼錯誤。");
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
