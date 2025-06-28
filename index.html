@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KSS 行事曆</title>
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
   <style>
@@ -64,8 +64,10 @@
 
 <div id="calendar"></div>
 
+<!-- 引入 FullCalendar 套件 -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales-all.min.js"></script>
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     let isAdmin = false;
@@ -174,7 +176,7 @@
         alert("密碼錯誤。");
       }
     });
- });
+  });
 </script>
 
 </body>
